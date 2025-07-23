@@ -11,8 +11,8 @@ console.log('[API_ROUTE][ID] URL da API configurada:', API_STATUS_PEDIDO_URL);
 
 // GET: obter status de pedido por ID
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-    // Acessar o ID diretamente dos parâmetros (não é necessário await)
-    const id = params.id;
+    // Acessar o ID dos parâmetros com a sintaxe correta para Next.js
+    const { id } = await params;
     
     try {
         const res = await fetch(`${API_STATUS_PEDIDO_URL}/${id}`);
@@ -35,8 +35,8 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
 // PUT: atualizar status de pedido por ID
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-    // Acessar o ID diretamente dos parâmetros (não é necessário await)
-    const id = params.id;
+    // Acessar o ID dos parâmetros com a sintaxe correta para Next.js
+    const { id } = await params;
     const rawData = await req.json();
     
     // Garantir que o ID esteja incluído nos dados e seja um número
@@ -99,8 +99,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
 // DELETE: inativar status de pedido por ID
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-    // Acessar o ID diretamente dos parâmetros (não é necessário await)
-    const id = params.id;
+    // Acessar o ID dos parâmetros com a sintaxe correta para Next.js
+    const { id } = await params;
     
     try {
         const res = await fetch(`${API_STATUS_PEDIDO_URL}/${id}`, {

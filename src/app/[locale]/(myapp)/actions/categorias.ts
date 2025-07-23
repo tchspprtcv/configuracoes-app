@@ -40,10 +40,11 @@ export type FetchCategoriasOptions = {
  * @param {number} options.page - Número da página para paginação
  * @param {number} options.size - Tamanho da página para paginação
  * @param {string} options.sort - Campo e direção para ordenação
+ * @param {AbortSignal} [signal] - Sinal para abortar a requisição
  * @returns {Promise<FetchCategoriasResponse>} Dados das categorias filtradas e metadados
  * @throws {Error} Se a requisição falhar
  */
-export async function fetchCategorias(options: FetchCategoriasOptions = {}): Promise<FetchCategoriasResponse> {
+export async function fetchCategorias(options: FetchCategoriasOptions = {}, signal?: AbortSignal): Promise<FetchCategoriasResponse> {
     const { search = '', page, size, sort } = options;
     
     try {
@@ -57,7 +58,7 @@ export async function fetchCategorias(options: FetchCategoriasOptions = {}): Pro
         const queryString = queryParams.toString();
         const url = `${API_ENDPOINTS.CATEGORIAS}${queryString ? `?${queryString}` : ''}`;
         
-        const res = await fetch(url);
+        const res = await fetch(url, { signal });
 
         if (!res.ok) {
             const errorData = await res.json().catch(() => null);
@@ -127,12 +128,15 @@ export async function fetchCategorias(options: FetchCategoriasOptions = {}): Pro
  * Busca uma categoria de serviço pelo ID
  * 
  * @param {string} id - ID da categoria a ser buscada
+ * @param {AbortSignal} [signal] - Sinal para abortar a requisição
  * @returns {Promise<CategoriaServico>} Dados da categoria
  * @throws {Error} Se a requisição falhar ou a categoria não for encontrada
  */
-export async function fetchCategoriaById(id: string): Promise<CategoriaServico> {
+export async function fetchCategoriaById(id: string, signal?: AbortSignal): Promise<CategoriaServico> {
     try {
-        const res = await fetch(API_ENDPOINTS.CATEGORIA_BY_ID(id));
+        const res = await fetch(API_ENDPOINTS.CATEGORIA_BY_ID(id), {
+            signal: signal
+        });
         
         if (!res.ok) {
             const errorData = await res.json().catch(() => null);
@@ -143,6 +147,12 @@ export async function fetchCategoriaById(id: string): Promise<CategoriaServico> 
         
         return await res.json();
     } catch (error) {
+        // Propagar erros de abort para que possam ser tratados adequadamente
+        if (error instanceof Error && error.name === 'AbortError') {
+            console.log('Requisição de categoria abortada');
+            throw error;
+        }
+        
         console.error('Erro ao buscar categoria por ID:', error);
         throw error instanceof Error ? error : new Error('Erro desconhecido ao buscar categoria');
     }

@@ -6,7 +6,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { cn } from '@igrp/igrp-framework-react-design-system';
 import CategoriaFormulario from '@/app/[locale]/(igrp)/(generated)/(configuracoes)/categorias/components/categoriaformulario';
@@ -19,7 +19,12 @@ import {
 export default function PageEditarComponent() {
   const router = useRouter();
   const params = useParams();
-  const id = params.id as string;
+  
+  // Memoizar o ID para evitar re-renders desnecessários
+  const id = useMemo(() => {
+    return params?.id ? String(params.id) : '';
+  }, [params?.id]);
+  
   const formRef = useRef<IGRPFormHandle<any>>(null);
 
   // Função para lidar com o clique no botão de atualizar

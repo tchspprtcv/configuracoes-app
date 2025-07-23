@@ -20,7 +20,7 @@ import {
 	IGRPInputColor 
 } from '@igrp/igrp-framework-react-design-system';
 import { fetchCategoriaById, createCategoria, updateCategoria } from '@/app/[locale]/(myapp)/actions/categorias';
-import { CategoriaServico, CreateCategoriasServicosCommand } from '@/app/[locale]/(myapp)/types/categorias';
+import { CategoriaServico, CreateCategoriasServicosCommand, UpdateCategoriasServicosCommand } from '@/app/[locale]/(myapp)/types/categorias';
 
 export default function Categoriaformulario({ id, afterSubmit, formRef } : { id?: string, afterSubmit?: () => void, formRef?: React.RefObject<IGRPFormHandle<any>> }) {
   const router = useRouter();
@@ -53,27 +53,60 @@ export default function Categoriaformulario({ id, afterSubmit, formRef } : { id?
   const [form1Data, setForm1Data] = useState<any>(initForm1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [dataLoaded, setDataLoaded] = useState(false);
   
+  // Controle para evitar múltiplas chamadas
+  const fetchController = useRef<AbortController | null>(null);
+  
+  // Efeito para carregar os dados da categoria apenas uma vez
   useEffect(() => {
-    if (id) {
-      setIsLoading(true);
-      fetchCategoriaById(id).then((categoria) => {
+    // Validar se temos um ID válido
+    if (!id || id.trim() === '') {
+      return;
+    }
+    
+    // Função para carregar os dados da categoria
+    const loadCategoriaData = async () => {
+      try {
+        setIsLoading(true);
+        console.log(`Carregando categoria com ID: ${id}`);
+        
+        const categoria = await fetchCategoriaById(id);
+        
         if (categoria) {
-          setForm1Data(categoria);
+          console.log('Categoria carregada:', categoria);
+          
+          // Mapear os dados da categoria para o formato do formulário
+          const formData = {
+            catNome: categoria.nome || '',
+            catCodigo: categoria.codigo || '',
+            catDescricao: categoria.descricao || '',
+            catOrdem: categoria.ordem || 1,
+            catIcone: categoria.icone || '',
+            catCor: categoria.cor || '#000000',
+            catStatus: categoria.ativo !== undefined ? categoria.ativo : true
+          };
+          
+          setForm1Data(formData);
+          setDataLoaded(true);
         }
-      })
-      .catch(error => {
+      } catch (error: any) {
+        console.error('Erro ao carregar categoria:', error);
         igrpToast({
           type: 'error',
           title: 'Erro',
-          description: `Erro ao carregar categoria: ${error.message}`,
+          description: `Erro ao carregar categoria: ${error instanceof Error ? error.message : 'Erro desconhecido'}`,
         });
-      })
-      .finally(() => {
+      } finally {
         setIsLoading(false);
-      });
+      }
+    };
+    
+    // Carregar apenas se ainda não foi carregado
+    if (!dataLoaded) {
+      loadCategoriaData();
     }
-  },[id, igrpToast])
+  }, []); // Executar apenas uma vez no mount
 
 
 
@@ -99,7 +132,13 @@ export default function Categoriaformulario({ id, afterSubmit, formRef } : { id?
       
       if (id) {
         // Atualizar categoria existente
-        response = await updateCategoria(id, categoriaData);
+        // Criar a estrutura correta para UpdateCategoriasServicosCommand
+        const updateData: UpdateCategoriasServicosCommand = {
+          categoriaServicoId: id,
+          criarcategoriasservicos: categoriaData
+        };
+        
+        response = await updateCategoria(id, updateData);
         igrpToast({
           type: 'success',
           title: 'Sucesso',
@@ -143,11 +182,7 @@ export default function Categoriaformulario({ id, afterSubmit, formRef } : { id?
 
   return (
     <div className={cn('component')}>
-      {isLoading ? (
-        <div className="flex justify-center items-center p-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
-      ) : (
+      { (
         <IGRPForm
           schema={form1}
           validationMode={`onBlur`}
